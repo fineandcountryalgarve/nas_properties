@@ -3,9 +3,9 @@ from nas_properties.np_transform import parse_description_file
 from nas_properties.np_load import upload_to_postgres, cleanup_temp_file
 
 
-def np_extract(reference: str, folder_name: str) -> str:
+def np_extract(reference: str, folder_name: str, project_folder: str = None) -> str:
     """Extract: Download description file from Google Drive."""
-    file_path = fetch_description_file(reference, folder_name)
+    file_path = fetch_description_file(reference, folder_name, project_folder)
     print("Extract stage completed.")
     return file_path
 
@@ -29,9 +29,15 @@ def np_load(transform_result: dict) -> None:
 
 if __name__ == "__main__":
     # Example usage for testing
+    # Regular property:
     reference = "FC1075VC"
     folder_name = "VILLAS_AND_CONTRACTS"
-
     file_path = np_extract(reference, folder_name)
+
+    # Agency agreement (with project_folder):
+    # reference = "FH_B1_01_P0"
+    # folder_name = "AGENCY_AGREEMENTS"
+    # file_path = np_extract(reference, folder_name, project_folder="Ferragudo Hills")
+
     transform_result = np_transform(file_path)
     np_load(transform_result)
