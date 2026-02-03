@@ -4,10 +4,16 @@ from app.utils.gdrive import list_files_in_folder, download_file_from_drive
 from app.utils.mimetypes import MIMETYPES
 
 
-def fetch_description_file(reference: str, folder_name: str) -> str:
+def fetch_description_file(reference: str, folder_name: str, project_folder: str = None) -> str:
     """
     Fetch description file from Google Drive for a given reference.
     Returns the path to the downloaded file.
+
+    Args:
+        reference: Property reference (e.g., FC1075VC or FH_B1_01_P0)
+        folder_name: Root folder name in config (e.g., VILLAS_AND_CONTRACTS)
+        project_folder: Optional project folder name for agency agreements
+                        (e.g., 'Ferragudo Hills'). If not provided, uses reference.
     """
     if not reference:
         raise ValueError("Parameter 'reference' is required.")
@@ -19,12 +25,15 @@ def fetch_description_file(reference: str, folder_name: str) -> str:
     if not root_folder_id:
         raise ValueError(f"Folder '{folder_name}' not found in config.")
 
-    print(f"Looking for reference '{reference}' in folder '{folder_name}' (ID: {root_folder_id})")
+    # Use project_folder if provided, otherwise fall back to reference
+    search_term = project_folder if project_folder else reference
+
+    print(f"Looking for folder '{search_term}' (reference: '{reference}') in '{folder_name}' (ID: {root_folder_id})")
 
     # Find the reference subfolder
     subfolders = list_files_in_folder(
         root_folder_id,
-        name_contains=reference,
+        name_contains=search_term,
         mime_type=MIMETYPES["folder"]
     )
 
@@ -37,14 +46,18 @@ def fetch_description_file(reference: str, folder_name: str) -> str:
     print(f"Found reference folder: {reference_folder['name']} (ID: {reference_folder_id})")
 
     # Look for description file in the subfolder
+    # For agency agreements (project_folder provided), search by reference since multiple
+    # units share the same folder. For regular properties, search by "description".
+    file_search_term = reference if project_folder else "description"
+
     description_files = list_files_in_folder(
         reference_folder_id,
-        name_contains="description",
+        name_contains=file_search_term,
         mime_type=MIMETYPES["docx"]
     )
 
     if not description_files:
-        raise FileNotFoundError(f"No description file found in folder '{reference_folder['name']}'.")
+        raise FileNotFoundError(f"No description file containing '{file_search_term}' found in folder '{reference_folder['name']}'.")
 
     description_file = description_files[0]
     print(f"Found description file: {description_file['name']} (ID: {description_file['id']})")
